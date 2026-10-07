@@ -1,190 +1,83 @@
 import streamlit as st
-import json
-import os
-from datetime import date
+import pandas as pd
 
-st.title("📅 Study Plan")
-
-st.write("Create and save your study timetable.")
-
-st.divider()
-
-FILE_NAME = "study_data.json"
-
-new_plan = st.session_state.get("new_plan", True)
-
-# Load saved subjects ONLY when opening saved plan
-if not new_plan and os.path.exists(FILE_NAME):
-
-    with open(FILE_NAME, "r") as file:
-        data = json.load(file)
-
-else:
-
-    data = {
-        "student": st.session_state.get("student", {}),
-        "subjects": []
-    }
-
-
-st.subheader("📚 Subjects and Exam Dates")
-
-num_subjects = st.number_input(
-    "Number of Subjects",
-    min_value=1,
-    max_value=10,
-    value=max(1, len(data.get("subjects", []))),
-    step=1
+st.set_page_config(
+    page_title="Study Plan",
+    page_icon="📚",
+    layout="centered"
 )
 
-subjects = []
+st.title("📚 My Study Plan")
+st.write("Plan your study time and keep track of your upcoming exams.")
 
-for i in range(num_subjects):
+# Study plan data
+study_data = {
+    "Subject": ["Python", "DBMS", "Artificial Intelligence", "Data Structures"],
+    "Priority": ["High", "Medium", "High", "Medium"],
+    "Study Time (hrs)": [2.0, 1.5, 2.0, 1.5],
+    "Exam Date": ["15 Oct 2026", "18 Oct 2026", "21 Oct 2026", "24 Oct 2026"]
+}
 
-    col1, col2 = st.columns([0.45, 0.55], gap="small")
+df = pd.DataFrame(study_data)
 
-    old_subject = ""
+st.subheader("🗓️ Weekly Study Timetable")
 
-    if i < len(data.get("subjects", [])):
+st.dataframe(
+    df,
+    use_container_width=True,
+    hide_index=True
+)
 
-        old_subject = data["subjects"][i].get(
-            "name",
-            ""
-        )
+# Total study hours
+total_hours = df["Study Time (hrs)"].sum()
 
-    with col1:
+st.success(f"⏰ Total Planned Study Time: {total_hours:.1f} hours")
 
-        subject_name = st.text_input(
-            f"Subject {i + 1}",
-            value=old_subject,
-            key=f"subject_{i}"
-        )
+st.divider()
 
-    old_date = date.today()
+# Add a new study session
+st.subheader("➕ Add Study Session")
 
-    if i < len(data.get("subjects", [])):
+subject = st.text_input("Subject")
 
-        try:
+priority = st.selectbox(
+    "Priority",
+    ["High", "Medium", "Low"]
+)
 
-            old_date = date.fromisoformat(
-                data["subjects"][i].get(
-                    "exam_date",
-                    str(date.today())
-                )
-            )
+study_hours = st.number_input(
+    "Study Time (hours)",
+    min_value=0.5,
+    max_value=12.0,
+    value=1.0,
+    step=0.5
+)
 
-        except:
+exam_date = st.date_input("Exam Date")
 
-            old_date = date.today()
-
-    with col2:
-
-        exam_date = st.date_input(
-            f"Exam Date {i + 1}",
-            value=old_date,
-            min_value=date.today(),
-            key=f"exam_{i}"
-        )
-
-    if subject_name:
-
-        old_completed = False
-
-        if i < len(data.get("subjects", [])):
-
-            old_completed = data["subjects"][i].get(
-                "completed",
-                False
-            )
-
-        subjects.append({
-            "name": subject_name,
-            "exam_date": str(exam_date),
-            "completed": old_completed
+if st.button("Add to Study Plan"):
+    if subject.strip():
+        new_row = pd.DataFrame({
+            "Subject": [subject],
+            "Priority": [priority],
+            "Study Time (hrs)": [study_hours],
+            "Exam Date": [exam_date.strftime("%d %b %Y")]
         })
 
-
-st.divider()
-
-if st.button("💾 Save Study Plan"):
-
-    if subjects:
-
-        # Save student information too
-        data["student"] = st.session_state.get(
-            "student",
-            data.get("student", {})
+        st.success(f"✅ {subject} added to your study plan!")
+        st.dataframe(
+            pd.concat([df, new_row], ignore_index=True),
+            use_container_width=True,
+            hide_index=True
         )
-
-        data["subjects"] = subjects
-
-        with open(FILE_NAME, "w") as file:
-
-            json.dump(
-                data,
-                file,
-                indent=4
-            )
-
-        st.session_state["new_plan"] = False
-
-        st.success(
-            "✅ Study plan saved successfully!"
-        )
-
     else:
-
-        st.warning(
-            "⚠️ Please enter at least one subject."
-        )
-
+        st.warning("Please enter a subject name.")
 
 st.divider()
 
-st.subheader("📋 Your Saved Timetable")
+st.subheader("💡 Study Tip")
 
-if data.get("subjects"):
-
-    for subject in data["subjects"]:
-
-        st.write(
-            f"📘 **{subject['name']}**"
-        )
-
-        st.write(
-            f"🗓️ Exam Date: {subject['exam_date']}"
-        )
-
-        st.divider()
-
-else:
-
-    st.info("No study plan saved yet.")
-
-
-col1, col2 = st.columns(2)
-
-with col1:
-
-    if st.button("⬅️ Back: Information"):
-
-        st.switch_page(
-            "pages/1_Information.py"
-        )
-
-
-with col2:
-
-    if st.button("➡️ Next: Progress"):
-
-        if subjects:
-
-            st.switch_page(
-                "pages/3_Progress.py"
-            )
-
-        else:
-
-            st.warning(
-                "⚠️ Please save your study plan first."
-            )
+st.info(
+    "Give more study time to high-priority subjects and start preparing "
+    "early for subjects with upcoming exams."
+)
