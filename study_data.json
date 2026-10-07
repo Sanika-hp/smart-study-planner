@@ -1,0 +1,17 @@
+{
+    "student": {
+        "name": "Sanika H P",
+        "email": "sanikasanika7451@gmail.com",
+        "program": "AI/DS",
+        "semester": "3rd Semester"
+    },
+    "subjects": [
+        {
+            "name": "DS",
+            "exam_date": "2026-10-16",
+            "completed": false,
+            "planned_hours": 2.0,
+            "completed_hours": 1.3
+        }
+    ]
+}
